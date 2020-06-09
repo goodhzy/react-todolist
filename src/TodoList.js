@@ -1,87 +1,58 @@
-import React, { Component, Fragment } from 'react'
-import TodoItem from './TodoItem'
-import PropTypes from 'prop-types'
+import React, { Component } from 'react'
+import TodoListUI from './TodoListUI'
+import { message } from 'antd';
+import store from './store'
+import {getInputChangeAction,getAddItemChangeAction,getDelItemChangeAction} from './store/actionCreators'
 
 class TodoList extends Component {
     constructor(props){
         super(props)
-        console.log('init');
         
         this.state = {
-            inputValue: '',
-            list: []
+            ...store.getState()
         }
         this.textInput = React.createRef();
         this.handleInputChange = this.handleInputChange.bind(this)
-        this.handleItemDel = this.handleItemDel.bind(this)
         this.handleBtnClick = this.handleBtnClick.bind(this)
-    }
-
-    UNSAFE_componentWillMount(){
-        console.log('componentWillMount');
-    }
-    componentDidMount(){
-        console.log('componentDidMount');  
-    }
-    shouldComponentUpdate(){
-        console.log('shouldComponentUpdate');
-        return true
-    }
-    componentWillUpdate(){
-        console.log('componentWillUpdate');
-    }
-    componentDidUpdate(){
-        console.log('componentDidUpdate');
+        this.handleStoreChange = this.handleStoreChange.bind(this)
+        this.handleItemDel = this.handleItemDel.bind(this)
+        store.subscribe(this.handleStoreChange)
     }
     render(){
-    console.log('parent render');
     
         return (
-            <Fragment>
-                {/* 这是jsx注释内容 */}
-            <div>
-                <label htmlFor="inputArea">输入内容</label>
-                <input ref={this.textInput} id="inputArea" value={this.state.inputValue} onChange={this.handleInputChange} />
-                <button onClick={this.handleBtnClick}>提交</button>
-            </div>
-            <ul>
-               {this.getTodoItem()}
-            </ul>
-            </Fragment>
+            <TodoListUI
+                inputValue={this.state.inputValue}
+                list={this.state.list}
+                handleInputChange={this.handleInputChange}
+                handleBtnClick={this.handleBtnClick}
+                handleItemDel={this.handleItemDel}
+            />
         )
     }
-
-    getTodoItem(){
-        return  this.state.list.map((item,index)=>{
-            return (
-             <TodoItem content={item} key={index} index={index} deleteItem={this.handleItemDel} />
-            )
-        })
-    }
     handleInputChange(e){
+
         const value = e.target.value
-        
-        this.setState(()=>({inputValue: value}))
+        const action = getInputChangeAction(value)
+        store.dispatch(action)
     }
     handleBtnClick(){
-        this.setState((prevState)=>({
-            list: [...prevState.list, prevState.inputValue],
-            inputValue: ''
-        }))
+        if(!this.state.inputValue){
+            message.warn('输点内容吧,亲');
+            return
+        }
+        const list = [...this.state.list, this.state.inputValue]
+        
+        const action = getAddItemChangeAction(list)
+        store.dispatch(action)
     }
     handleItemDel(index){
-        this.setState((prevState)=>{
-            const list = [...prevState.list]
-            list.splice(index, 1)
-            return {list}
-        })
+        const action = getDelItemChangeAction(index)
+        store.dispatch(action)
     }
-}
-
-TodoItem.propTypes = {
-    content: PropTypes.string,
-    deleteItem: PropTypes.func,
-    index: PropTypes.number
+    handleStoreChange(){
+        this.setState(store.getState())
+    }
 }
 
 export default TodoList
